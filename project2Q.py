@@ -1,3 +1,9 @@
+#import matplotlib as mpl
+#mpl.rcParams['backend.qt4'] = 'PySide'
+#mpl.use('Qt4Agg')
+#from pylab import *
+#ion()
+
 from ple import PLE
 from ple.games.flappybird import FlappyBird
 import pandas as pd
@@ -8,7 +14,7 @@ import random
 
 
 class QLearingAgent:
-    alpha = 0.1
+    alpha = 0.5
     gamma = 1
     epsilon = 0.1
 
@@ -33,7 +39,7 @@ class QLearingAgent:
 
     def getQValue(self, stateActionPair):
         if not (stateActionPair in self._q):
-            self._q[stateActionPair] = -5
+            self._q[stateActionPair] = random.randint(-5,5)
 
         return self._q[stateActionPair]
 
@@ -102,7 +108,6 @@ class QLearingAgent:
         datapivot = pd.pivot_table(data, "q-value", "y-distance", "x-distance")
         sns.heatmap(data=datapivot, linewidths=.5, linecolor='lightgray')
         plt.show(block = True)
-        plt.interactive(False)
         return
 
 def train_game(nb_episodes, agent):
@@ -137,7 +142,7 @@ def train_game(nb_episodes, agent):
             if nb_episodes % 100 == 0:
                 print("score for this episode: %d" % score)
                 print("number of episodes left %d" % nb_episodes)
-                agent.printQ()
+                #agent.printQ()
             env.reset_game()
             nb_episodes -= 1
             score = 0
@@ -174,5 +179,6 @@ def run_game(nb_episodes, agent):
             score = 0
 
 agent = QLearingAgent()
-train_game(1000, agent)
+train_game(10000, agent)
 run_game(1, agent)
+agent.printQ()
