@@ -1,20 +1,12 @@
-#import matplotlib as mpl
-#mpl.rcParams['backend.qt4'] = 'PySide'
-#mpl.use('Qt4Agg')
-#from pylab import *
-#ion()
-
 from ple import PLE
 from ple.games.flappybird import FlappyBird
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-
 import random
 
-
 class QLearingAgent:
-    alpha = 0.5
+    alpha = 0.1
     gamma = 1
     epsilon = 0.1
 
@@ -39,8 +31,8 @@ class QLearingAgent:
 
     def getQValue(self, state, action):
         if not (state in self._q):
-            qValue = random.randint(-5,5)
-            self._q[state] = [qValue, qValue]
+            intqValue = 0
+            self._q[state] = [intqValue, intqValue]
 
         if action == 0:
             return self._q[state][0]
@@ -78,8 +70,7 @@ class QLearingAgent:
 
             training_policy is called once per frame in the game while training
         """
-        randomNumber = random.randint(0,100)
-        if self.epsilon * 100 < randomNumber:
+        if self.epsilon < random.random():
             return random.randint(0, 1)
 
         return self.policy(state)
@@ -95,6 +86,9 @@ class QLearingAgent:
 
         qAction0 = self.getQValue(maskState, 0)
         qAction1 = self.getQValue(maskState, 1)
+
+        if qAction0 == qAction1:
+            return random.randint(0, 1)
 
         if qAction0 > qAction1:
             return 0
@@ -145,22 +139,6 @@ class QLearingAgent:
         ax.set_title(what)
         plt.show()
 
-    def printQ(self):
-        x =[]
-        y = []
-        z = []
-
-        for key, value in self._q.iteritems():
-            z.append(value)
-            x.append(key[0][3])
-            y.append(key[0][2] - key[0][0])
-
-        data = pd.DataFrame(data={'x-distance': x, 'y-distance': y, 'q-value': z})
-        datapivot = pd.pivot_table(data, "q-value", "y-distance", "x-distance")
-        sns.heatmap(data=datapivot, linewidths=.5, linecolor='lightgray')
-        plt.show(block = True)
-        return
-
 def train_game(nb_episodes, agent):
     """ Runs nb_episodes episodes of the game with agent picking the moves.
         An episode of FlappyBird ends with the bird crashing into a pipe or going off screen.
@@ -172,6 +150,7 @@ def train_game(nb_episodes, agent):
     env.init()
 
     score = 0
+    maxScore = 0
     while nb_episodes > 0:
         # pick an action
         s1 = env.game.getGameState()
@@ -190,15 +169,16 @@ def train_game(nb_episodes, agent):
         # reset the environment if the game is over
         if isGameOver:
 
-            if nb_episodes % 100 == 0:
+            if nb_episodes % 300 == 0:
                 print("score for this episode: %d" % score)
                 print("number of episodes left %d" % nb_episodes)
-                agent.plot()
+                #agent.plot('pi')
             env.reset_game()
             nb_episodes -= 1
+            if(score > maxScore):
+                maxScore = score
             score = 0
-
-
+    print(maxScore)
 
 def run_game(nb_episodes, agent):
     """ Runs nb_episodes episodes of the game with agent picking the moves.
@@ -210,7 +190,6 @@ def run_game(nb_episodes, agent):
     env = PLE(FlappyBird(), fps=30, display_screen=True, force_fps=False, rng=None,
               reward_values=reward_values)
     env.init()
-
     score = 0
     while nb_episodes > 0:
         # pick an action
@@ -218,10 +197,7 @@ def run_game(nb_episodes, agent):
 
         # step the environment
         reward = env.act(env.getActionSet()[action])
-        #print("reward=%d" % reward)
-
         score += reward
-
         # reset the environment if the game is over
         if env.game_over():
             print("score for this episode: %d" % score)
@@ -230,5 +206,6 @@ def run_game(nb_episodes, agent):
             score = 0
 
 agent = QLearingAgent()
-train_game(2000, agent)
+train_game(40000, agent)
 run_game(1, agent)
+agent.plot('pi')

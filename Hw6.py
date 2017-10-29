@@ -22,3 +22,4 @@ for x in range(0, 10):
         newQ = currentQ + a *(r + gamma * nextQ-currentQ)
         q[step] = newQ
         print('Episode: {} (state, action): {} new Q value: {}'.format(x,step, newQ))
+
