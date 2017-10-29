@@ -55,7 +55,7 @@ class QLearingAgent:
             maxNextQ = max([self.getQValue((maskS2, 0)), self.getQValue((maskS2, 1))])
         newQ = currentQ + self.alpha * (r+ self.gamma * maxNextQ - currentQ)
 
-        self._q[maskS1] = (newQ, a)
+        self._q[(maskS1, a)] = newQ
         return
 
     def training_policy(self, state):
@@ -99,9 +99,10 @@ class QLearingAgent:
             y.append(key[0][2] - key[0][0])
 
         data = pd.DataFrame(data={'x-distance': x, 'y-distance': y, 'q-value': z})
-        datapivot = pd.pivot_table(data, "x-distance", "y-distance", "q-value")
+        datapivot = pd.pivot_table(data, "q-value", "y-distance", "x-distance")
         sns.heatmap(data=datapivot, linewidths=.5, linecolor='lightgray')
-        plt.show()
+        plt.show(block = True)
+        plt.interactive(False)
         return
 
 def train_game(nb_episodes, agent):
@@ -142,6 +143,7 @@ def train_game(nb_episodes, agent):
             score = 0
 
 
+
 def run_game(nb_episodes, agent):
     """ Runs nb_episodes episodes of the game with agent picking the moves.
         An episode of FlappyBird ends with the bird crashing into a pipe or going off screen.
@@ -171,7 +173,6 @@ def run_game(nb_episodes, agent):
             nb_episodes -= 1
             score = 0
 
-
 agent = QLearingAgent()
-train_game(100, agent)
+train_game(1000, agent)
 run_game(1, agent)
