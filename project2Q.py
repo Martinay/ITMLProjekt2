@@ -1,14 +1,18 @@
 from ple import PLE
 from ple.games.flappybird import FlappyBird
-import sys
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 import random
 
 
-class MonteCarloAgent:
+class QLearingAgent:
+    alpha = 0.1
+    gamma = 1
+    epsilon = 0.1
+
     _q = {}
-    _returns = {}
-    _visitedStatesInEpisode = {}
 
     def __init__(self):
         random.seed(42)
@@ -27,10 +31,11 @@ class MonteCarloAgent:
     def maskState(self, s):
         return (int(s['player_y'] * 15 / 512), int(s['player_vel']), int(s['next_pipe_top_y'] * 15 / 512),int(s['next_pipe_dist_to_player'] * 15 / 512))
 
+    def getQValue(self, stateActionPair):
+        if not (stateActionPair in self._q):
+            self._q[stateActionPair] = -5
 
-    def addToVisited(self, stateAction, r):
-        #if not(stateAction in self._visitedStatesInEpisode):
-            self._visitedStatesInEpisode[stateAction] = r
+        return self._q[stateActionPair]
 
     def observe(self, s1, a, r, s2, end):
         """ this function is called during training on each step of the game where
@@ -41,30 +46,16 @@ class MonteCarloAgent:
             subsequent steps in the same episode. That is, s1 in the second call will be s2
             from the first call.
             """
+        maskS1 = self.maskState(s1)
+        maskS2 = self.maskState(s2)
 
-        if(end):
-            a = 0
+        currentQ = self.getQValue((maskS1, a))
+        maxNextQ = 0
+        if not end:
+            maxNextQ = max([self.getQValue((maskS2, 0)), self.getQValue((maskS2, 1))])
+        newQ = currentQ + self.alpha * (r+ self.gamma * maxNextQ - currentQ)
 
-        s1Masked = self.maskState(s1)
-        if(not(end)):
-            self.addToVisited((s1Masked, a), r)
-            return
-
-        self._visitedStatesInEpisode[(s1Masked, a)] = r
-        #self._visitedStatesInEpisode[self.maskState(s2)] = 0
-
-        G = sum(self._visitedStatesInEpisode.itervalues())
-
-        for key, value in self._visitedStatesInEpisode.iteritems():
-            if not (key in self._returns):
-                self._returns[key] = [G]
-            else:
-                self._returns[key].append(G)
-
-        for key, value in self._visitedStatesInEpisode.iteritems():
-                self._q[key] = float(sum(self._returns[key]))/len(self._returns[key])
-
-        self._visitedStatesInEpisode = {}
+        self._q[maskS1] = (newQ, a)
         return
 
     def training_policy(self, state):
@@ -73,10 +64,9 @@ class MonteCarloAgent:
 
             training_policy is called once per frame in the game while training
         """
-
-        epsilon = 10
-        if (random.randint(0,100) < epsilon):
-            random.randint(0, 1)
+        randomNumber = random.randint(0,100)
+        if self.epsilon * 100 < randomNumber:
+            return random.randint(0, 1)
 
         return self.policy(state)
 
@@ -87,30 +77,32 @@ class MonteCarloAgent:
             policy is called once per frame in the game (30 times per second in real-time)
             and needs to be sufficiently fast to not slow down the game.
         """
+        maskState = self.maskState(state)
 
-        stateMasked = self.maskState(state)
+        qAction0 = self.getQValue((maskState, 0))
+        qAction1 = self.getQValue((maskState, 1))
 
-        action0InQ = (stateMasked, 0) in self._q
-        action1InQ = (stateMasked, 1) in self._q
-
-        if action0InQ and action1InQ:
-            valueAction0 = self._q[(stateMasked, 0)]
-            valueAction1 = self._q[(stateMasked, 1)]
-            if(valueAction0 == valueAction1):
-                return random.randint(0, 1)
-            if (valueAction0 > valueAction1):
-                return 0
-            else:
-                return 1
-
-        if action0InQ and not action1InQ:
+        if qAction0 > qAction1:
             return 0
 
-        if not action0InQ and action1InQ:
-            return 1
+        return 1
 
-        return random.randint(0, 1)
+    def printQ(self):
+        x =[]
+        y = []
+        z = []
 
+        for key, value in self._q.iteritems():
+            z.append(value)
+            state = key[0]
+            x.append(key[0][3])
+            y.append(key[0][2] - key[0][0])
+
+        data = pd.DataFrame(data={'x-distance': x, 'y-distance': y, 'q-value': z})
+        datapivot = pd.pivot_table(data, "x-distance", "y-distance", "q-value")
+        sns.heatmap(data=datapivot, linewidths=.5, linecolor='lightgray')
+        plt.show()
+        return
 
 def train_game(nb_episodes, agent):
     """ Runs nb_episodes episodes of the game with agent picking the moves.
@@ -141,9 +133,10 @@ def train_game(nb_episodes, agent):
         # reset the environment if the game is over
         if isGameOver:
 
-            print("score for this episode: %d" % score)
             if nb_episodes % 100 == 0:
+                print("score for this episode: %d" % score)
                 print("number of episodes left %d" % nb_episodes)
+                agent.printQ()
             env.reset_game()
             nb_episodes -= 1
             score = 0
@@ -179,6 +172,6 @@ def run_game(nb_episodes, agent):
             score = 0
 
 
-agent = MonteCarloAgent()
-train_game(3000, agent)
+agent = QLearingAgent()
+train_game(100, agent)
 run_game(1, agent)
