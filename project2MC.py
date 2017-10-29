@@ -11,6 +11,7 @@ class QLearingAgent:
     epsilon = 0.1
 
     _q = {}
+    _steps = []
 
     def __init__(self):
         random.seed(42)
@@ -48,7 +49,24 @@ class QLearingAgent:
             subsequent steps in the same episode. That is, s1 in the second call will be s2
             from the first call.
             """
-        maskS1 = self.maskState(s1)
+        self._steps.append((s1, a, r, s2))
+
+        if not end:
+            return
+
+        G = sum([step[2] for step in self._steps])
+
+        #self.learn_from_steps(self.steps)
+
+
+        self.steps = []
+
+
+
+
+
+
+
 
         currentQ = self.getQValue(maskS1, a)
         maxNextQ = 0
@@ -206,6 +224,6 @@ def run_game(nb_episodes, agent):
             score = 0
 
 agent = QLearingAgent()
-train_game(40000, agent)
+train_game(1000, agent)
 run_game(1, agent)
 agent.plot('pi')
