@@ -35,13 +35,17 @@ class QLearingAgent:
         return {"positive": 1.0, "tick": 0.0, "loss": -5.0}
 
     def maskState(self, s):
-        return (int(s['player_y'] * 15 / 512), int(s['player_vel']), int(s['next_pipe_top_y'] * 15 / 512),int(s['next_pipe_dist_to_player'] * 15 / 512))
+        return ( int(s['next_pipe_top_y'] * 15 / 512), int(s['player_y'] * 15 / 512), int(s['player_vel']), int(s['next_pipe_dist_to_player'] * 15 / 512))
 
-    def getQValue(self, stateActionPair):
-        if not (stateActionPair in self._q):
-            self._q[stateActionPair] = random.randint(-5,5)
+    def getQValue(self, state, action):
+        if not (state in self._q):
+            qValue = random.randint(-5,5)
+            self._q[state] = [qValue, qValue]
 
-        return self._q[stateActionPair]
+        if action == 0:
+            return self._q[state][0]
+
+        return self._q[state][1]
 
     def observe(self, s1, a, r, s2, end):
         """ this function is called during training on each step of the game where
@@ -55,13 +59,17 @@ class QLearingAgent:
         maskS1 = self.maskState(s1)
         maskS2 = self.maskState(s2)
 
-        currentQ = self.getQValue((maskS1, a))
+        currentQ = self.getQValue(maskS1, a)
         maxNextQ = 0
         if not end:
-            maxNextQ = max([self.getQValue((maskS2, 0)), self.getQValue((maskS2, 1))])
+            maxNextQ = max([self.getQValue(maskS2, 0), self.getQValue(maskS2, 1)])
         newQ = currentQ + self.alpha * (r+ self.gamma * maxNextQ - currentQ)
 
-        self._q[(maskS1, a)] = newQ
+        if a == 0:
+            self._q[maskS1][0] = newQ
+        else:
+            self._q[maskS1][1] = newQ
+
         return
 
     def training_policy(self, state):
@@ -85,13 +93,57 @@ class QLearingAgent:
         """
         maskState = self.maskState(state)
 
-        qAction0 = self.getQValue((maskState, 0))
-        qAction1 = self.getQValue((maskState, 1))
+        qAction0 = self.getQValue(maskState, 0)
+        qAction1 = self.getQValue(maskState, 1)
 
         if qAction0 > qAction1:
             return 0
 
         return 1
+
+    def plot(self, what='v'):
+        # This function assumes that q = { (s, [q(s,flap), q(s,noop)]) ,... },
+        # that is, q is a dictionary where each entry is mapping from a state to
+        # an array of q-values.
+        # States are expected to be encoded as 4-tuples with the (discretized
+        # versions of) the 4 values 'next_pipe_top_y', 'player_y', 'player_vel',
+        # 'next_pipe_dist_to_player' (in this order).
+        #
+        # "what" defines which value is plotted and can be one of 'q_flap',
+        # 'q_noop', 'v' or 'pi'
+
+        # turn q into a list of records, one for each state
+        data = [s + tuple(self._q[s]) for s in self._q.keys()]
+        # turn this into a dataframe, giving the columns the right names
+        df = pd.DataFrame(data=data,
+                          columns=('next_pipe_top_y', 'player_y', 'player_vel',
+                                   'next_pipe_dist_to_player', 'q_flap', 'q_noop')
+                          )
+        # add a few more columns that might come in handy
+        df['delta_y'] = df['player_y'] - df['next_pipe_top_y']
+        df['v'] = df[['q_noop', 'q_flap']].max(axis=1)
+        df['pi'] = (df[['q_noop', 'q_flap']].idxmax(axis=1) == 'q_flap') * 1
+        # group entries that have the same 'delta_y' and 'next_pipe_dist_to_player',
+        # by taking the mean of the remaining values
+        df = df.groupby(
+            ['delta_y', 'next_pipe_dist_to_player'], as_index=False).mean()
+
+        plt.figure()
+        if what in ('q_flap', 'q_noop', 'v'):
+            # for estimated values, use a range of -5 to 5
+            ax = sns.heatmap(
+                df.pivot('delta_y', 'next_pipe_dist_to_player', what),
+                vmin=-5, vmax=5, cmap='coolwarm', annot=True, fmt='.2f')
+        elif what == 'pi':
+            # for the policy, use a range of 0 to 1
+            ax = sns.heatmap(
+                df.pivot('delta_y', 'next_pipe_dist_to_player', 'pi'),
+                vmin=0, vmax=1, cmap='coolwarm')
+        # invert the x axis such that states further from the next pipe are on the
+        # left and states closer to the next pipe are on the right
+        ax.invert_xaxis()
+        ax.set_title(what)
+        plt.show()
 
     def printQ(self):
         x =[]
@@ -100,7 +152,6 @@ class QLearingAgent:
 
         for key, value in self._q.iteritems():
             z.append(value)
-            state = key[0]
             x.append(key[0][3])
             y.append(key[0][2] - key[0][0])
 
@@ -142,7 +193,7 @@ def train_game(nb_episodes, agent):
             if nb_episodes % 100 == 0:
                 print("score for this episode: %d" % score)
                 print("number of episodes left %d" % nb_episodes)
-                #agent.printQ()
+                agent.plot()
             env.reset_game()
             nb_episodes -= 1
             score = 0
@@ -179,6 +230,5 @@ def run_game(nb_episodes, agent):
             score = 0
 
 agent = QLearingAgent()
-train_game(10000, agent)
+train_game(2000, agent)
 run_game(1, agent)
-agent.printQ()
