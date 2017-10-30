@@ -3,6 +3,7 @@ from ple.games.flappybird import FlappyBird
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+from collections import defaultdict
 import random
 
 class QLearingAgent:
@@ -10,7 +11,7 @@ class QLearingAgent:
     gamma = 1
     epsilon = 0.1
 
-    _q = {}
+    _q = defaultdict(lambda: [0, 0])
 
     def __init__(self):
         random.seed(42)
@@ -29,20 +30,6 @@ class QLearingAgent:
     def maskState(self, s):
         return ( int(s['next_pipe_top_y'] * 15 / 512), int(s['player_y'] * 15 / 512), int(s['player_vel']), int(s['next_pipe_dist_to_player'] * 15 / 512))
 
-    def getQValues(self, state):
-        qValues = self._q.get(state, None)
-
-        if qValues is not None:
-            return qValues
-
-        initqValue = 0
-        newQValues = [initqValue, initqValue]
-        self._q[state] = newQValues
-        return newQValues
-
-    def getQValue(self, state, action):
-        return self.getQValues(state)[action]
-
     def observe(self, s1, a, r, s2, end):
         """ this function is called during training on each step of the game where
             the state transition is going from state s1 with action a to state s2 and
@@ -54,11 +41,15 @@ class QLearingAgent:
             """
         maskS1 = self.maskState(s1)
 
-        currentQ = self.getQValue(maskS1, a)
+        currentQ = self._q[maskS1][a]
         maxNextQ = 0
         if not end:
             maskS2 = self.maskState(s2)
-            maxNextQ = max(self.getQValues(maskS2))
+            _qstate2 = self._q[maskS2]
+            if(_qstate2[0] > _qstate2[1]):
+                maxNextQ = _qstate2[0]
+            else:
+                maxNextQ = _qstate2[1]
         newQ = currentQ + self.alpha * (r + self.gamma * maxNextQ - currentQ)
 
         if a == 0:
@@ -87,7 +78,7 @@ class QLearingAgent:
         """
         maskState = self.maskState(state)
 
-        qValues = self.getQValues(maskState)
+        qValues = self._q[maskState]
         qAction0 = qValues[0]
         qAction1 = qValues[1]
 
@@ -171,7 +162,7 @@ def train_game(nb_episodes, agent):
         # reset the environment if the game is over
         if isGameOver:
 
-            if nb_episodes % 1000 == 0:
+            if nb_episodes % 100 == 0:
                 print("score for this episode: %d" % score)
                 print("number of episodes left %d" % nb_episodes)
             env.reset_game()
