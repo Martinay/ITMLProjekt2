@@ -7,6 +7,7 @@ from collections import defaultdict
 import random
 
 class QLearingAgent:
+    _scores = []
     alpha = 0.1
     gamma = 1
     epsilon = 0.1
@@ -132,6 +133,23 @@ class QLearingAgent:
         ax.set_title(what)
         plt.show()
 
+    def plotAverage(self):
+        addedScores = 0;
+        averageScores = []
+        for idx, score in enumerate(agent._scores):
+            addedScores += score
+            if (idx + 1) % 100 == 0:
+                averageScores.append(addedScores / 100)
+                addedScores = 0
+
+        countEpisodes = range(100, (len(averageScores) + 1) * 100, 100)
+
+        plt.plot(countEpisodes, averageScores, 'o-', linewidth=2, label='Average Trainingscores')
+        plt.legend(loc='best')
+        plt.xlabel("Episodes")
+        plt.ylabel("Averagescore")
+        plt.show()
+
 def train_game(nb_episodes, agent):
     """ Runs nb_episodes episodes of the game with agent picking the moves.
         An episode of FlappyBird ends with the bird crashing into a pipe or going off screen.
@@ -161,6 +179,7 @@ def train_game(nb_episodes, agent):
 
         # reset the environment if the game is over
         if isGameOver:
+            agent._scores.append(score)
 
             if nb_episodes % 100 == 0:
                 print("score for this episode: %d" % score)
@@ -199,5 +218,14 @@ def run_game(nb_episodes, agent):
 
 agent = QLearingAgent()
 train_game(1000, agent)
-run_game(1, agent)
-agent.plot('pi')
+
+while(True):
+    choice = raw_input("1: Run ; 2: Plot Pi ; 3: Plot Average ; 0: Exit \nType in: ")
+    if choice == '0':
+        break
+    if choice == '1':
+        run_game(1, agent)
+    if choice == '2':
+        agent.plot('pi')
+    if choice == '3':
+        agent.plotAverage()
