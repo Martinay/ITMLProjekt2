@@ -5,10 +5,12 @@ import numpy as np
 
 from QLearningAgent import QLearingAgent
 from MonteCarloAgent import MCAgent
+from LinearFunctionApproximation import LFA
 
 ################################
 agent = MCAgent()
 #agent = QLearingAgent()
+#agent = LFA()
 
 printEveryIterations = 1000
 
