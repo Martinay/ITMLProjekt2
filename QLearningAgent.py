@@ -1,5 +1,3 @@
-from ple import PLE
-from ple.games.flappybird import FlappyBird
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -7,7 +5,6 @@ from collections import defaultdict
 import random
 
 class QLearingAgent:
-    _scores = []
     alpha = 0.1
     gamma = 1
     epsilon = 0.1
@@ -89,7 +86,7 @@ class QLearingAgent:
             return 0
         return 1
 
-    def plot(self, what='v'):
+    def plotQ(self, what='v'):
         # This function assumes that q = { (s, [q(s,flap), q(s,noop)]) ,... },
         # that is, q is a dictionary where each entry is mapping from a state to
         # an array of q-values.
@@ -132,100 +129,3 @@ class QLearingAgent:
         ax.invert_xaxis()
         ax.set_title(what)
         plt.show()
-
-    def plotAverage(self):
-        addedScores = 0;
-        averageScores = []
-        for idx, score in enumerate(agent._scores):
-            addedScores += score
-            if (idx + 1) % 100 == 0:
-                averageScores.append(addedScores / 100)
-                addedScores = 0
-
-        countEpisodes = range(100, (len(averageScores) + 1) * 100, 100)
-
-        plt.plot(countEpisodes, averageScores, 'o-', linewidth=2, label='Average Trainingscores')
-        plt.legend(loc='best')
-        plt.xlabel("Episodes")
-        plt.ylabel("Averagescore")
-        plt.show()
-
-def train_game(nb_episodes, agent):
-    """ Runs nb_episodes episodes of the game with agent picking the moves.
-        An episode of FlappyBird ends with the bird crashing into a pipe or going off screen.
-    """
-    reward_values = agent.reward_values()
-
-    env = PLE(FlappyBird(), fps=30, display_screen=False, force_fps=True, rng=None, reward_values=reward_values)
-
-    env.init()
-
-    score = 0
-    maxScore = 0
-    while nb_episodes > 0:
-        # pick an action
-        s1 = env.game.getGameState()
-        action = agent.training_policy(s1)
-        # print("reward=%s" % s1)
-        # step the environment
-        reward = env.act(env.getActionSet()[action])
-        # print("reward=%d" % reward)
-        s2 = env.game.getGameState()
-        isGameOver = env.game_over()
-        # for training let the agent observe the current state transition
-        agent.observe(s1, action, reward, s2, isGameOver)
-
-        score += reward
-
-        # reset the environment if the game is over
-        if isGameOver:
-            agent._scores.append(score)
-
-            if nb_episodes % 100 == 0:
-                print("score for this episode: %d" % score)
-                print("number of episodes left %d" % nb_episodes)
-            env.reset_game()
-            nb_episodes -= 1
-            if(score > maxScore):
-                maxScore = score
-            score = 0
-    print("best score: %d" % maxScore)
-
-def run_game(nb_episodes, agent):
-    """ Runs nb_episodes episodes of the game with agent picking the moves.
-        An episode of FlappyBird ends with the bird crashing into a pipe or going off screen.
-    """
-
-    reward_values = {"positive": 1.0, "negative": 0.0, "tick": 0.0, "loss": 0.0, "win": 0.0}
-
-    env = PLE(FlappyBird(), fps=30, display_screen=True, force_fps=False, rng=None,
-              reward_values=reward_values)
-    env.init()
-    score = 0
-    while nb_episodes > 0:
-        # pick an action
-        action = agent.policy(env.game.getGameState())
-
-        # step the environment
-        reward = env.act(env.getActionSet()[action])
-        score += reward
-        # reset the environment if the game is over
-        if env.game_over():
-            print("score for this episode: %d" % score)
-            env.reset_game()
-            nb_episodes -= 1
-            score = 0
-
-agent = QLearingAgent()
-train_game(1000, agent)
-
-while(True):
-    choice = raw_input("1: Run ; 2: Plot Pi ; 3: Plot Average ; 0: Exit \nType in: ")
-    if choice == '0':
-        break
-    if choice == '1':
-        run_game(1, agent)
-    if choice == '2':
-        agent.plot('pi')
-    if choice == '3':
-        agent.plotAverage()
