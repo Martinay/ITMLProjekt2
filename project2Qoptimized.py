@@ -27,7 +27,7 @@ class QLearingAgent:
         return {"positive": 1.0, "tick": 0.0, "loss": -5.0}
 
     def maskState(self, s):
-        return ( int(s['next_pipe_top_y'] * 15 / 512), int(s['player_y'] * 15 / 512), int(s['player_vel']), int(s['next_pipe_dist_to_player'] * 15 / 512))
+        return ( int((s['player_y'] - s['next_pipe_top_y']) * 15 / 512), int(s['player_vel']), int(s['next_pipe_dist_to_player'] * 15 / 512))
 
     def getQValues(self, state):
         qValues = self._q.get(state, None)
@@ -112,11 +112,10 @@ class QLearingAgent:
         data = [s + tuple(self._q[s]) for s in self._q.keys()]
         # turn this into a dataframe, giving the columns the right names
         df = pd.DataFrame(data=data,
-                          columns=('next_pipe_top_y', 'player_y', 'player_vel',
+                          columns=('delta_y', 'player_vel',
                                    'next_pipe_dist_to_player', 'q_flap', 'q_noop')
                           )
         # add a few more columns that might come in handy
-        df['delta_y'] = df['player_y'] - df['next_pipe_top_y']
         df['v'] = df[['q_noop', 'q_flap']].max(axis=1)
         df['pi'] = (df[['q_noop', 'q_flap']].idxmax(axis=1) == 'q_flap') * 1
         # group entries that have the same 'delta_y' and 'next_pipe_dist_to_player',
@@ -171,7 +170,7 @@ def train_game(nb_episodes, agent):
         # reset the environment if the game is over
         if isGameOver:
 
-            if nb_episodes % 1000 == 0:
+            if nb_episodes % 300 == 0:
                 print("score for this episode: %d" % score)
                 print("number of episodes left %d" % nb_episodes)
             env.reset_game()
