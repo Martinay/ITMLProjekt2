@@ -28,7 +28,7 @@ class QLearingAgent:
         return {"positive": 1.0, "tick": 0.0, "loss": -5.0}
 
     def maskState(self, s):
-        return ( int(s['next_pipe_top_y'] * 15 / 512), int(s['player_y'] * 15 / 512), int(s['player_vel']), int(s['next_pipe_dist_to_player'] * 15 / 512))
+        return ( int(s['next_pipe_top_y'] * 15 / 512), int(s['player_y'] * 15 / 512), s['player_vel'], int(s['next_pipe_dist_to_player'] * 15 / 512))
 
     def getQValue(self, state, action):
         if not (state in self._q):

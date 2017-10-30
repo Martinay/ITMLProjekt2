@@ -27,7 +27,12 @@ class QLearingAgent:
         return {"positive": 1.0, "tick": 0.0, "loss": -5.0}
 
     def maskState(self, s):
-        return ( int((s['player_y'] - s['next_pipe_top_y']) * 15 / 512), int(s['player_vel']), int(s['next_pipe_dist_to_player'] * 15 / 512))
+        ydifference=s['player_y'] - s['next_pipe_top_y']
+        if ydifference < 0:
+            ydifference = -1
+        else:
+            ydifference *= 15 / 512.0
+        return ( int(ydifference), int(s['player_vel'] / 4), int(s['next_pipe_dist_to_player'] * 15 / 512))
 
     def getQValues(self, state):
         qValues = self._q.get(state, None)
@@ -206,6 +211,6 @@ def run_game(nb_episodes, agent):
             score = 0
 
 agent = QLearingAgent()
-train_game(1000, agent)
+train_game(20000, agent)
 run_game(1, agent)
 agent.plot('pi')
