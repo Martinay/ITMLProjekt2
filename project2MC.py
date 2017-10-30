@@ -3,14 +3,16 @@ from ple.games.flappybird import FlappyBird
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+from collections import defaultdict
 import random
 
-class QLearingAgent:
-    alpha = 0.1
+class MCAgent:
     gamma = 1
     epsilon = 0.1
 
-    _q = {}
+    _q = defaultdict(lambda: [0, 0])
+    _returnsSum = defaultdict(int)
+    _returnsCount = defaultdict(int)
     _steps = []
 
     def __init__(self):
@@ -28,17 +30,7 @@ class QLearingAgent:
         return {"positive": 1.0, "tick": 0.0, "loss": -5.0}
 
     def maskState(self, s):
-        return ( int(s['next_pipe_top_y'] * 15 / 512), int(s['player_y'] * 15 / 512), s['player_vel'], int(s['next_pipe_dist_to_player'] * 15 / 512))
-
-    def getQValue(self, state, action):
-        if not (state in self._q):
-            intqValue = 0
-            self._q[state] = [intqValue, intqValue]
-
-        if action == 0:
-            return self._q[state][0]
-
-        return self._q[state][1]
+        return ( int(s['next_pipe_top_y'] * 15 / 512), int(s['player_y'] * 15 / 512), int(s['player_vel']), int(s['next_pipe_dist_to_player'] * 15 / 512))
 
     def observe(self, s1, a, r, s2, end):
         """ this function is called during training on each step of the game where
@@ -49,37 +41,23 @@ class QLearingAgent:
             subsequent steps in the same episode. That is, s1 in the second call will be s2
             from the first call.
             """
-        self._steps.append((s1, a, r, s2))
+        self._steps.append((self.maskState(s1), a, r))
 
         if not end:
             return
 
-        G = sum([step[2] for step in self._steps])
+        uniqueStateActionPairs = set([(tuple(x[0]), x[1]) for x in self._steps])
 
-        #self.learn_from_steps(self.steps)
+        for stateActionPair in uniqueStateActionPairs:
+            firstIdx = next(i for i,x in enumerate(self._steps) if x[0] == stateActionPair[0] and x[1] == stateActionPair[1])
 
+            G = sum([x[2] * (self.gamma ** i) for i, x in enumerate(self._steps[firstIdx:])])
+            self._returnsCount[stateActionPair] +=1
+            self._returnsSum[stateActionPair] += G
 
-        self.steps = []
+            self._q[stateActionPair[0]][stateActionPair[1]] = self._returnsSum[stateActionPair] / float(self._returnsCount[stateActionPair])
 
-
-
-
-
-
-
-
-        currentQ = self.getQValue(maskS1, a)
-        maxNextQ = 0
-        if not end:
-            maskS2 = self.maskState(s2)
-            maxNextQ = max([self.getQValue(maskS2, 0), self.getQValue(maskS2, 1)])
-        newQ = currentQ + self.alpha * (r+ self.gamma * maxNextQ - currentQ)
-
-        if a == 0:
-            self._q[maskS1][0] = newQ
-        else:
-            self._q[maskS1][1] = newQ
-
+        self._steps = []
         return
 
     def training_policy(self, state):
@@ -88,9 +66,8 @@ class QLearingAgent:
 
             training_policy is called once per frame in the game while training
         """
-        if self.epsilon < random.random():
+        if self.epsilon > random.random():
             return random.randint(0, 1)
-
         return self.policy(state)
 
     def policy(self, state):
@@ -102,15 +79,14 @@ class QLearingAgent:
         """
         maskState = self.maskState(state)
 
-        qAction0 = self.getQValue(maskState, 0)
-        qAction1 = self.getQValue(maskState, 1)
+        qValues = self._q[maskState]
+        qAction0 = qValues[0]
+        qAction1 = qValues[1]
 
         if qAction0 == qAction1:
             return random.randint(0, 1)
-
         if qAction0 > qAction1:
             return 0
-
         return 1
 
     def plot(self, what='v'):
@@ -187,16 +163,15 @@ def train_game(nb_episodes, agent):
         # reset the environment if the game is over
         if isGameOver:
 
-            if nb_episodes % 300 == 0:
+            if nb_episodes % 1000 == 0:
                 print("score for this episode: %d" % score)
                 print("number of episodes left %d" % nb_episodes)
-                #agent.plot('pi')
             env.reset_game()
             nb_episodes -= 1
             if(score > maxScore):
                 maxScore = score
             score = 0
-    print(maxScore)
+    print("best score: %d" % maxScore)
 
 def run_game(nb_episodes, agent):
     """ Runs nb_episodes episodes of the game with agent picking the moves.
@@ -223,7 +198,7 @@ def run_game(nb_episodes, agent):
             nb_episodes -= 1
             score = 0
 
-agent = QLearingAgent()
-train_game(1000, agent)
+agent = MCAgent()
+train_game(10000, agent)
 run_game(1, agent)
 agent.plot('pi')
