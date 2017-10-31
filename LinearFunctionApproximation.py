@@ -1,4 +1,5 @@
 import random
+import numpy as np
 
 class LFA:
     alpha = 0.1
@@ -12,14 +13,14 @@ class LFA:
         random.seed(42)
         return
 
-    def transfromState(s):
-        return ( s['next_pipe_top_y'], s['player_y'], s['player_vel'], s['next_pipe_dist_to_player'])
+    def transfromState(self, s):
+        return [s['next_pipe_top_y'], s['player_y'], s['player_vel'], s['next_pipe_dist_to_player']]
 
     def calcQA0(self, state):
-        return [self._thetaA0[0] * state[0], self._thetaA0[1] * state[1], self._thetaA0[2] * state[2], self._thetaA0[3] * state[3]]
+        return np.dot(self._thetaA0, state)
 
     def calcQA1(self, state):
-        return [self._thetaA1[0] * state[0], self._thetaA1[1] * state[1], self._thetaA1[2] * state[2], self._thetaA1[3] * state[3]]
+        return np.dot(self._thetaA1, state)
 
     def reward_values(self):
         """ returns the reward values used for training
@@ -41,11 +42,26 @@ class LFA:
             from the first call.
             """
         if a == 0:
-            theta = self._thetaA0
+            thetaS1 = self._thetaA0
         else:
-            theta = self._thetaA1
+            thetaS1 = self._thetaA1
 
-        theta[0] = theta[0] + self.alpha * ( r + self.gamma  )
+        policyS2 = self.training_policy(s2)
+        if policyS2 == 0:
+            thetaS2 = self._thetaA0
+        else:
+            thetaS2 = self._thetaA1
+
+        transformedS1 = self.transfromState(s1)
+        transformedS2 = self.transfromState(s2)
+
+        factor = self.alpha * (r + self.gamma * np.dot(thetaS2, transformedS2) - np.dot(thetaS1, transformedS1))
+        newTheta = thetaS1 + np.multiply(transformedS1, factor)
+
+        if a == 0:
+            self._thetaA0 = newTheta
+        else:
+            self._thetaA1 = newTheta
 
         return
 

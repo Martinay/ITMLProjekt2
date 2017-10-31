@@ -9,10 +9,10 @@ from LinearFunctionApproximation import LFA
 
 ################################
 #agent = MCAgent()
-agent = QLearingAgent()
-#agent = LFA()
+#agent = QLearingAgent()
+agent = LFA()
 
-printEveryIterations = 1000
+printEveryIterations = 100
 plotEveryNAverages = 20
 ################################
 _scores = []
