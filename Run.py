@@ -13,25 +13,26 @@ agent = QLearingAgent()
 #agent = LFA()
 
 printEveryIterations = 1000
-
+plotEveryNAverages = 20
 ################################
 _scores = []
 
 def plotAverage():
     addedScores = 0;
     averageScores = []
+    splitEveryN = len(_scores) / plotEveryNAverages
     for idx, score in enumerate(_scores):
         addedScores += score
-        if (idx + 1) % 100 == 0:
-            averageScores.append(addedScores / 100)
+        if (idx + 1) % splitEveryN == 0:
+            averageScores.append(addedScores / splitEveryN)
             addedScores = 0
 
-    countEpisodes = range(100, (len(averageScores) + 1) * 100, 100)
+    countEpisodes = range(splitEveryN, (len(averageScores) + 1) * splitEveryN, splitEveryN)
 
-    plt.plot(countEpisodes, averageScores, 'o-', linewidth=2, label='Average Trainingscores')
+    plt.plot(countEpisodes, averageScores, 'o-', linewidth=2, label='Average training scores')
     plt.legend(loc='best')
     plt.xlabel("Episodes")
-    plt.ylabel("Averagescore")
+    plt.ylabel("Average score")
     plt.show()
 
 def train_game(nb_episodes, agent):
@@ -110,7 +111,7 @@ while(True):
         train_game(rounds, agent)
     if choice == 2:
         name = raw_input("Enter Filename: ")
-        np.save(name + 'Q.npy', agent._q)
+        np.save(name + 'Q.npy', dict(agent._q))
         np.save(name + 'S.npy', _scores)
     if choice == 3:
         name = raw_input("Enter Filename: ")
