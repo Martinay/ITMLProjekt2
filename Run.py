@@ -8,8 +8,8 @@ from MonteCarloAgent import MCAgent
 from LinearFunctionApproximation import LFA
 
 ################################
-agent = MCAgent()
-#agent = QLearingAgent()
+#agent = MCAgent()
+agent = QLearingAgent()
 #agent = LFA()
 
 printEveryIterations = 1000
@@ -111,12 +111,12 @@ while(True):
     if choice == 2:
         name = raw_input("Enter Filename: ")
         np.save(name + 'Q.npy', agent._q)
-        np.save(name + 'S.npy', agent._scores)
+        np.save(name + 'S.npy', _scores)
     if choice == 3:
         name = raw_input("Enter Filename: ")
         # Load
         agent._q = np.load(name + 'Q.npy').item()
-        agent._scores = np.load(name + 'S.npy').tolist()
+        _scores = np.load(name + 'S.npy').tolist()
     if choice == 4:
         rounds = int(raw_input("Enter Runrounds: "))
         run_game(rounds, agent)

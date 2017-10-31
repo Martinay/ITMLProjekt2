@@ -45,7 +45,7 @@ class LFA:
         else:
             theta = self._thetaA1
 
-        theta[0] = theta[0] + self.alpha * ( r + self.gamma * )
+        theta[0] = theta[0] + self.alpha * ( r + self.gamma  )
 
         return
 
