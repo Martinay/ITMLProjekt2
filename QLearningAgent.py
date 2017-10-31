@@ -25,7 +25,7 @@ class QLearingAgent:
         """
         return {"positive": 1.0, "tick": 0.0, "loss": -5.0}
 
-    def maskState(self, s):
+    def discretizeState(self, s):
         return ( int(s['next_pipe_top_y'] * 15 / 512), int(s['player_y'] * 15 / 512), int(s['player_vel']), int(s['next_pipe_dist_to_player'] * 15 / 512))
 
     def observe(self, s1, a, r, s2, end):
@@ -37,12 +37,12 @@ class QLearingAgent:
             subsequent steps in the same episode. That is, s1 in the second call will be s2
             from the first call.
             """
-        maskS1 = self.maskState(s1)
+        maskS1 = self.discretizeState(s1)
 
         currentQ = self._q[maskS1][a]
         maxNextQ = 0
         if not end:
-            maskS2 = self.maskState(s2)
+            maskS2 = self.discretizeState(s2)
             _qstate2 = self._q[maskS2]
             if(_qstate2[0] > _qstate2[1]):
                 maxNextQ = _qstate2[0]
@@ -74,7 +74,7 @@ class QLearingAgent:
             policy is called once per frame in the game (30 times per second in real-time)
             and needs to be sufficiently fast to not slow down the game.
         """
-        maskState = self.maskState(state)
+        maskState = self.discretizeState(state)
 
         qValues = self._q[maskState]
         qAction0 = qValues[0]

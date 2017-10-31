@@ -3,16 +3,18 @@ from ple.games.flappybird import FlappyBird
 import matplotlib.pyplot as plt
 import numpy as np
 
-from QLearningAgent import QLearingAgent
-from MonteCarloAgent import MCAgent
 from LinearFunctionApproximation import LFA
+from QLearningAgent import QLearingAgent
+from QLearningAgentOptimized import QLearingAgentOptimized
+from MonteCarloAgent import MCAgent
 
 ################################
 #agent = MCAgent()
 #agent = QLearingAgent()
-agent = LFA()
+agent = QLearingAgentOptimized()
+#agent = LFA()
 
-printEveryIterations = 100
+printEveryIterations = 1000
 plotEveryNAverages = 20
 ################################
 _scores = []

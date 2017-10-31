@@ -27,7 +27,7 @@ class MCAgent:
         """
         return {"positive": 1.0, "tick": 0.0, "loss": -5.0}
 
-    def maskState(self, s):
+    def discretizeState(self, s):
         return ( int(s['next_pipe_top_y'] * 15 / 512), int(s['player_y'] * 15 / 512), int(s['player_vel']), int(s['next_pipe_dist_to_player'] * 15 / 512))
 
     def observe(self, s1, a, r, s2, end):
@@ -39,7 +39,7 @@ class MCAgent:
             subsequent steps in the same episode. That is, s1 in the second call will be s2
             from the first call.
             """
-        self._steps.append((self.maskState(s1), a, r))
+        self._steps.append((self.discretizeState(s1), a, r))
 
         if not end:
             return
@@ -75,7 +75,7 @@ class MCAgent:
             policy is called once per frame in the game (30 times per second in real-time)
             and needs to be sufficiently fast to not slow down the game.
         """
-        maskState = self.maskState(state)
+        maskState = self.discretizeState(state)
 
         qValues = self._q[maskState]
         qAction0 = qValues[0]

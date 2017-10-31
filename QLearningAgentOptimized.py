@@ -1,16 +1,15 @@
-from ple import PLE
-from ple.games.flappybird import FlappyBird
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+from collections import defaultdict
 import random
 
-class QLearingAgent:
+class QLearingAgentOptimized:
     alpha = 0.1
     gamma = 1
     epsilon = 0.1
 
-    _q = {}
+    _q = defaultdict(lambda: [0, 0])
 
     def __init__(self):
         random.seed(42)
@@ -24,29 +23,15 @@ class QLearingAgent:
             1 for passing through each pipe and 0 for all other state
             transitions.
         """
-        return {"positive": 1.0, "tick": 0.0, "loss": -5.0}
+        return {"positive": 1.0, "tick": 0.0, "loss": -100.0}
 
     def maskState(self, s):
-        ydifference=s['player_y'] - s['next_pipe_top_y']
+        ydifference = s['player_y'] - s['next_pipe_top_y']
         if ydifference < 0:
             ydifference = -1
         else:
             ydifference *= 15 / 512.0
-        return ( int(ydifference), int(s['player_vel'] / 4), int(s['next_pipe_dist_to_player'] * 15 / 512))
-
-    def getQValues(self, state):
-        qValues = self._q.get(state, None)
-
-        if qValues is not None:
-            return qValues
-
-        initqValue = 0
-        newQValues = [initqValue, initqValue]
-        self._q[state] = newQValues
-        return newQValues
-
-    def getQValue(self, state, action):
-        return self.getQValues(state)[action]
+        return (int(ydifference), int(s['player_vel'] / 4), int(s['next_pipe_dist_to_player'] * 15 / 512))
 
     def observe(self, s1, a, r, s2, end):
         """ this function is called during training on each step of the game where
@@ -59,11 +44,15 @@ class QLearingAgent:
             """
         maskS1 = self.maskState(s1)
 
-        currentQ = self.getQValue(maskS1, a)
+        currentQ = self._q[maskS1][a]
         maxNextQ = 0
         if not end:
             maskS2 = self.maskState(s2)
-            maxNextQ = max(self.getQValues(maskS2))
+            _qstate2 = self._q[maskS2]
+            if(_qstate2[0] > _qstate2[1]):
+                maxNextQ = _qstate2[0]
+            else:
+                maxNextQ = _qstate2[1]
         newQ = currentQ + self.alpha * (r + self.gamma * maxNextQ - currentQ)
 
         if a == 0:
@@ -92,7 +81,7 @@ class QLearingAgent:
         """
         maskState = self.maskState(state)
 
-        qValues = self.getQValues(maskState)
+        qValues = self._q[maskState]
         qAction0 = qValues[0]
         qAction1 = qValues[1]
 
@@ -102,7 +91,7 @@ class QLearingAgent:
             return 0
         return 1
 
-    def plot(self, what='v'):
+    def plotQ(self, what='v'):
         # This function assumes that q = { (s, [q(s,flap), q(s,noop)]) ,... },
         # that is, q is a dictionary where each entry is mapping from a state to
         # an array of q-values.
@@ -117,10 +106,11 @@ class QLearingAgent:
         data = [s + tuple(self._q[s]) for s in self._q.keys()]
         # turn this into a dataframe, giving the columns the right names
         df = pd.DataFrame(data=data,
-                          columns=('delta_y', 'player_vel',
+                          columns=('next_pipe_top_y', 'player_y', 'player_vel',
                                    'next_pipe_dist_to_player', 'q_flap', 'q_noop')
                           )
         # add a few more columns that might come in handy
+        df['delta_y'] = df['player_y'] - df['next_pipe_top_y']
         df['v'] = df[['q_noop', 'q_flap']].max(axis=1)
         df['pi'] = (df[['q_noop', 'q_flap']].idxmax(axis=1) == 'q_flap') * 1
         # group entries that have the same 'delta_y' and 'next_pipe_dist_to_player',
@@ -144,73 +134,3 @@ class QLearingAgent:
         ax.invert_xaxis()
         ax.set_title(what)
         plt.show()
-
-def train_game(nb_episodes, agent):
-    """ Runs nb_episodes episodes of the game with agent picking the moves.
-        An episode of FlappyBird ends with the bird crashing into a pipe or going off screen.
-    """
-    reward_values = agent.reward_values()
-
-    env = PLE(FlappyBird(), fps=30, display_screen=False, force_fps=True, rng=None, reward_values=reward_values)
-
-    env.init()
-
-    score = 0
-    maxScore = 0
-    while nb_episodes > 0:
-        # pick an action
-        s1 = env.game.getGameState()
-        action = agent.training_policy(s1)
-        # print("reward=%s" % s1)
-        # step the environment
-        reward = env.act(env.getActionSet()[action])
-        # print("reward=%d" % reward)
-        s2 = env.game.getGameState()
-        isGameOver = env.game_over()
-        # for training let the agent observe the current state transition
-        agent.observe(s1, action, reward, s2, isGameOver)
-
-        score += reward
-
-        # reset the environment if the game is over
-        if isGameOver:
-
-            if nb_episodes % 300 == 0:
-                print("score for this episode: %d" % score)
-                print("number of episodes left %d" % nb_episodes)
-            env.reset_game()
-            nb_episodes -= 1
-            if(score > maxScore):
-                maxScore = score
-            score = 0
-    print("best score: %d" % maxScore)
-
-def run_game(nb_episodes, agent):
-    """ Runs nb_episodes episodes of the game with agent picking the moves.
-        An episode of FlappyBird ends with the bird crashing into a pipe or going off screen.
-    """
-
-    reward_values = {"positive": 1.0, "negative": 0.0, "tick": 0.0, "loss": 0.0, "win": 0.0}
-
-    env = PLE(FlappyBird(), fps=30, display_screen=True, force_fps=False, rng=None,
-              reward_values=reward_values)
-    env.init()
-    score = 0
-    while nb_episodes > 0:
-        # pick an action
-        action = agent.policy(env.game.getGameState())
-
-        # step the environment
-        reward = env.act(env.getActionSet()[action])
-        score += reward
-        # reset the environment if the game is over
-        if env.game_over():
-            print("score for this episode: %d" % score)
-            env.reset_game()
-            nb_episodes -= 1
-            score = 0
-
-agent = QLearingAgent()
-train_game(20000, agent)
-run_game(1, agent)
-agent.plot('pi')
