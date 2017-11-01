@@ -7,10 +7,9 @@ import random
 class MCAgent:
     gamma = 1
     epsilon = 0.1
+    alpha = 0.1
 
     _q = defaultdict(lambda: [0, 0])
-    _returnsSum = defaultdict(int)
-    _returnsCount = defaultdict(int)
     _steps = []
 
     def __init__(self):
@@ -49,11 +48,11 @@ class MCAgent:
         for stateActionPair in uniqueStateActionPairs:
             firstIdx = next(i for i, x in enumerate(self._steps) if x[0] == stateActionPair[0] and x[1] == stateActionPair[1])
 
-            G = sum([x[2] * (self.gamma ** i) for i, x in enumerate(self._steps[firstIdx:])])
-            self._returnsCount[stateActionPair] +=1
-            self._returnsSum[stateActionPair] += G
+            g = sum([x[2] * (self.gamma ** i) for i, x in enumerate(self._steps[firstIdx:])])
 
-            self._q[stateActionPair[0]][stateActionPair[1]] = self._returnsSum[stateActionPair] / float(self._returnsCount[stateActionPair])
+            qValues = self._q[stateActionPair[0]]
+
+            qValues[stateActionPair[1]] += self.alpha * (g - qValues[stateActionPair[1]])
 
         self._steps = []
         return

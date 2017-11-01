@@ -41,22 +41,28 @@ class LFA:
             subsequent steps in the same episode. That is, s1 in the second call will be s2
             from the first call.
             """
-        if a == 0:
-            thetaS1 = self._thetaA0
-        else:
-            thetaS1 = self._thetaA1
-
-        policyS2 = self.training_policy(s2)
-        if policyS2 == 0:
-            thetaS2 = self._thetaA0
-        else:
-            thetaS2 = self._thetaA1
+        maxNextQ = 0
+        if not end:
+            maskS2 = self.transfromState(s2)
+            qs2A0 = self.calcQA0(maskS2)
+            qs2A1 = self.calcQA1(maskS2)
+            if (qs2A0 > qs2A1):
+                maxNextQ = qs2A0
+            else:
+                maxNextQ = qs2A1
 
         transformedS1 = self.transfromState(s1)
-        transformedS2 = self.transfromState(s2)
 
-        factor = self.alpha * (r + self.gamma * np.dot(thetaS2, transformedS2) - np.dot(thetaS1, transformedS1))
-        newTheta = thetaS1 + np.multiply(transformedS1, factor)
+        if a == 0:
+            theta = self._thetaA0
+            currentQ = self.calcQA0(transformedS1)
+        else:
+            theta = self._thetaA1
+            currentQ = self.calcQA1(transformedS1)
+
+
+        factor = self.alpha * (r + self.gamma * maxNextQ - currentQ)
+        newTheta = theta + np.multiply(transformedS1, factor)
 
         if a == 0:
             self._thetaA0 = newTheta

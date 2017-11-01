@@ -9,12 +9,12 @@ from QLearningAgentOptimized import QLearingAgentOptimized
 from MonteCarloAgent import MCAgent
 
 ################################
-#agent = MCAgent()
+agent = MCAgent()
 #agent = QLearingAgent()
-agent = QLearingAgentOptimized()
+#agent = QLearingAgentOptimized()
 #agent = LFA()
 
-printEveryIterations = 1000
+printEveryIterations = 100
 plotEveryNAverages = 20
 ################################
 _scores = []
