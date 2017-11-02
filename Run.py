@@ -11,6 +11,7 @@ from QLearningAgentDynamicAlpha import QLearingAgentDynamicAlpha
 from MonteCarloAgent import MCAgent
 from MCAgentDynamicAlpha import MCAgentDynamicAlpha
 from AgentBest import AgentBest
+from test import QLearingAgentTest
 
 ################################
 #agent = MCAgent()
@@ -20,7 +21,8 @@ from AgentBest import AgentBest
 #agent = QLearingAgentDynamicAlpha()
 #agent = LFA()
 #agent = MCAgentDynamicAlpha()
-agent = AgentBest()
+#agent = AgentBest()
+agent = QLearingAgentTest()
 
 printEveryIterations = 100
 plotEveryNAverages = 20
