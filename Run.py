@@ -46,7 +46,7 @@ def train_game(nb_episodes, agent):
     reward_values = agent.reward_values()
     game = FlappyBird()
     game.allowed_fps = None
-    env = PLE(game, fps=30, display_screen=True, force_fps=True, rng=None, reward_values=reward_values)
+    env = PLE(game, fps=30, display_screen=False, force_fps=True, rng=None, reward_values=reward_values)
 
     env.init()
 
