@@ -5,13 +5,15 @@ import numpy as np
 
 from LinearFunctionApproximation import LFA
 from QLearningAgent import QLearingAgent
-from QLearningAgentOptimized import QLearingAgentOptimized
+from QLearningAgentOptimizedReward import QLearingAgentOptimizedReward
+from QLearningAgentOptimizedGamma import QLearingAgentOptimizedGamma
 from MonteCarloAgent import MCAgent
 
 ################################
 agent = MCAgent()
 #agent = QLearingAgent()
-#agent = QLearingAgentOptimized()
+#agent = QLearingAgentOptimizedReward()
+#agent = QLearingAgentOptimizedGamma()
 #agent = LFA()
 
 printEveryIterations = 100
@@ -42,8 +44,9 @@ def train_game(nb_episodes, agent):
         An episode of FlappyBird ends with the bird crashing into a pipe or going off screen.
     """
     reward_values = agent.reward_values()
-
-    env = PLE(FlappyBird(), fps=30, display_screen=False, force_fps=True, rng=None, reward_values=reward_values)
+    game = FlappyBird()
+    game.allowed_fps = None
+    env = PLE(game, fps=30, display_screen=True, force_fps=True, rng=None, reward_values=reward_values)
 
     env.init()
 
@@ -103,6 +106,7 @@ def run_game(nb_episodes, agent):
             nb_episodes -= 1
             score = 0
 
+print "current agent : %s" % agent.__class__
 while(True):
     choice = int(raw_input("1: Training \n2: Save Q \n3: Load Q \n4: Run "
                            "\n5: Plot Pi \n6: Plot Average \n0: Exit \n\nType in: "))

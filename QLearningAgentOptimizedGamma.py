@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from collections import defaultdict
 import random
 
-class QLearingAgentOptimized:
+class QLearingAgent:
     alpha = 0.1
     gamma = 1
     epsilon = 0.1
@@ -23,15 +23,10 @@ class QLearingAgentOptimized:
             1 for passing through each pipe and 0 for all other state
             transitions.
         """
-        return {"positive": 1.0, "tick": 0.0, "loss": -100.0}
+        return {"positive": 1.0, "tick": 0.0, "loss": -1000.0}
 
-    def maskState(self, s):
-        ydifference = s['player_y'] - s['next_pipe_top_y']
-        if ydifference < 0:
-            ydifference = -1
-        else:
-            ydifference *= 15 / 512.0
-        return (int(ydifference), int(s['player_vel'] / 4), int(s['next_pipe_dist_to_player'] * 15 / 512))
+    def discretizeState(self, s):
+        return ( int(s['next_pipe_top_y'] * 15 / 512), int(s['player_y'] * 15 / 512), int(s['player_vel']), int(s['next_pipe_dist_to_player'] * 15 / 512))
 
     def observe(self, s1, a, r, s2, end):
         """ this function is called during training on each step of the game where
@@ -42,12 +37,12 @@ class QLearingAgentOptimized:
             subsequent steps in the same episode. That is, s1 in the second call will be s2
             from the first call.
             """
-        maskS1 = self.maskState(s1)
+        maskS1 = self.discretizeState(s1)
 
         currentQ = self._q[maskS1][a]
         maxNextQ = 0
         if not end:
-            maskS2 = self.maskState(s2)
+            maskS2 = self.discretizeState(s2)
             _qstate2 = self._q[maskS2]
             if(_qstate2[0] > _qstate2[1]):
                 maxNextQ = _qstate2[0]
@@ -79,7 +74,7 @@ class QLearingAgentOptimized:
             policy is called once per frame in the game (30 times per second in real-time)
             and needs to be sufficiently fast to not slow down the game.
         """
-        maskState = self.maskState(state)
+        maskState = self.discretizeState(state)
 
         qValues = self._q[maskState]
         qAction0 = qValues[0]
