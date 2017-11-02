@@ -4,9 +4,9 @@ import matplotlib.pyplot as plt
 from collections import defaultdict
 import random
 
-class QLearingAgent:
+class QLearingAgentOptimizedGamma:
     alpha = 0.1
-    gamma = 1
+    gamma = 0.9
     epsilon = 0.1
 
     _q = defaultdict(lambda: [0, 0])
@@ -23,7 +23,7 @@ class QLearingAgent:
             1 for passing through each pipe and 0 for all other state
             transitions.
         """
-        return {"positive": 1.0, "tick": 0.0, "loss": -1000.0}
+        return {"positive": 1.0, "tick": 0.0, "loss": -5.0}
 
     def discretizeState(self, s):
         return ( int(s['next_pipe_top_y'] * 15 / 512), int(s['player_y'] * 15 / 512), int(s['player_vel']), int(s['next_pipe_dist_to_player'] * 15 / 512))

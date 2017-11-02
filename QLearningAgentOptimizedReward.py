@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from collections import defaultdict
 import random
 
-class QLearingAgent:
+class QLearingAgentOptimizedReward:
     alpha = 0.1
     gamma = 1
     epsilon = 0.1
