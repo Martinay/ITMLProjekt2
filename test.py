@@ -1,6 +1,3 @@
-import numpy as np
+import math
 
-a = [2, 3]
-
-result = np.multiply(a,3)
-print result
+print math.log(1000, 10)

@@ -3,13 +3,15 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from collections import defaultdict
 import random
+import math
 
-class QLearingAgentOptimizedReward:
-    alpha = 0.1
-    gamma = 1
+class AgentBest:
+    alpha = 0.3
+    gamma = 0.9
     epsilon = 0.1
 
     _q = defaultdict(lambda: [0, 0])
+    _episodeCount = 0
 
     def __init__(self):
         random.seed(42)
@@ -54,6 +56,16 @@ class QLearingAgentOptimizedReward:
             self._q[maskS1][0] = newQ
         else:
             self._q[maskS1][1] = newQ
+
+        if not end:
+            return
+
+        self._episodeCount += 1
+        decimalNumbers = math.log(self._episodeCount, 10)
+        decimalNumbersCeiled = math.ceil(decimalNumbers)
+        if decimalNumbers > 2 and decimalNumbersCeiled - decimalNumbers < 0.000000000000001:
+            self.alpha = 1 * 10 ** (-decimalNumbersCeiled + 2)
+            print "new alpha: %f" % self.alpha
 
         return
 

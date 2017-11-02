@@ -7,14 +7,20 @@ from LinearFunctionApproximation import LFA
 from QLearningAgent import QLearingAgent
 from QLearningAgentOptimizedReward import QLearingAgentOptimizedReward
 from QLearningAgentOptimizedGamma import QLearingAgentOptimizedGamma
+from QLearningAgentDynamicAlpha import QLearingAgentDynamicAlpha
 from MonteCarloAgent import MCAgent
+from MCAgentDynamicAlpha import MCAgentDynamicAlpha
+from AgentBest import AgentBest
 
 ################################
-agent = MCAgent()
+#agent = MCAgent()
 #agent = QLearingAgent()
 #agent = QLearingAgentOptimizedReward()
 #agent = QLearingAgentOptimizedGamma()
+#agent = QLearingAgentDynamicAlpha()
 #agent = LFA()
+#agent = MCAgentDynamicAlpha()
+agent = AgentBest()
 
 printEveryIterations = 100
 plotEveryNAverages = 20
@@ -46,7 +52,7 @@ def train_game(nb_episodes, agent):
     reward_values = agent.reward_values()
     game = FlappyBird()
     game.allowed_fps = None
-    env = PLE(game, fps=60, display_screen=True, force_fps=False, rng=None, reward_values=reward_values)
+    env = PLE(game, fps=30, display_screen=False, force_fps=True, rng=None, reward_values=reward_values)
 
     env.init()
 

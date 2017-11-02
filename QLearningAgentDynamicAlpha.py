@@ -3,13 +3,15 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from collections import defaultdict
 import random
+import math
 
-class QLearingAgentOptimizedReward:
+class QLearingAgentDynamicAlpha:
     alpha = 0.1
     gamma = 1
     epsilon = 0.1
 
     _q = defaultdict(lambda: [0, 0])
+    _episodeCount = 0
 
     def __init__(self):
         random.seed(42)
@@ -23,7 +25,7 @@ class QLearingAgentOptimizedReward:
             1 for passing through each pipe and 0 for all other state
             transitions.
         """
-        return {"positive": 100.0, "tick": 1.0, "loss": -1000.0}
+        return {"positive": 1.0, "tick": 0.0, "loss": -5.0}
 
     def discretizeState(self, s):
         return ( int(s['next_pipe_top_y'] * 15 / 512), int(s['player_y'] * 15 / 512), int(s['player_vel']), int(s['next_pipe_dist_to_player'] * 15 / 512))
@@ -54,6 +56,16 @@ class QLearingAgentOptimizedReward:
             self._q[maskS1][0] = newQ
         else:
             self._q[maskS1][1] = newQ
+
+        if not end:
+            return
+
+        self._episodeCount += 1
+        decimalNumbers = math.log(self._episodeCount, 10)
+        decimalNumbersCeiled = math.ceil(decimalNumbers)
+        if decimalNumbers > 2 and decimalNumbersCeiled - decimalNumbers < 0.000000000000001:
+            self.alpha *= 10 ** (-decimalNumbersCeiled + 2)
+            print "new alpha: %f" % self.alpha
 
         return
 

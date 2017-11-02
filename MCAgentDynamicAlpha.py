@@ -1,15 +1,18 @@
+import math
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from collections import defaultdict
 import random
 
-class QLearingAgentOptimizedReward:
-    alpha = 0.1
+class MCAgentDynamicAlpha:
     gamma = 1
     epsilon = 0.1
+    alpha = 0.1
 
     _q = defaultdict(lambda: [0, 0])
+    _steps = []
+    _episodeCount = 0
 
     def __init__(self):
         random.seed(42)
@@ -23,7 +26,7 @@ class QLearingAgentOptimizedReward:
             1 for passing through each pipe and 0 for all other state
             transitions.
         """
-        return {"positive": 100.0, "tick": 1.0, "loss": -1000.0}
+        return {"positive": 1.0, "tick": 0.0, "loss": -5.0}
 
     def discretizeState(self, s):
         return ( int(s['next_pipe_top_y'] * 15 / 512), int(s['player_y'] * 15 / 512), int(s['player_vel']), int(s['next_pipe_dist_to_player'] * 15 / 512))
@@ -37,24 +40,30 @@ class QLearingAgentOptimizedReward:
             subsequent steps in the same episode. That is, s1 in the second call will be s2
             from the first call.
             """
-        maskS1 = self.discretizeState(s1)
+        self._steps.append((self.discretizeState(s1), a, r))
 
-        currentQ = self._q[maskS1][a]
-        maxNextQ = 0
         if not end:
-            maskS2 = self.discretizeState(s2)
-            _qstate2 = self._q[maskS2]
-            if(_qstate2[0] > _qstate2[1]):
-                maxNextQ = _qstate2[0]
-            else:
-                maxNextQ = _qstate2[1]
-        newQ = currentQ + self.alpha * (r + self.gamma * maxNextQ - currentQ)
+            return
 
-        if a == 0:
-            self._q[maskS1][0] = newQ
-        else:
-            self._q[maskS1][1] = newQ
+        uniqueStateActionPairs = set([(tuple(x[0]), x[1]) for x in self._steps])
 
+        for stateActionPair in uniqueStateActionPairs:
+            firstIdx = next(i for i, x in enumerate(self._steps) if x[0] == stateActionPair[0] and x[1] == stateActionPair[1])
+
+            g = sum([x[2] * (self.gamma ** i) for i, x in enumerate(self._steps[firstIdx:])])
+
+            qValues = self._q[stateActionPair[0]]
+
+            qValues[stateActionPair[1]] += self.alpha * (g - qValues[stateActionPair[1]])
+
+        self._steps = []
+
+        self._episodeCount+=1
+        decimalNumbers = math.log(self._episodeCount, 10)
+        decimalNumbersCeiled = math.ceil(decimalNumbers)
+        if decimalNumbers > 1 and decimalNumbersCeiled - decimalNumbers < 0.000000000000001:
+            self.alpha = 10 ** (-decimalNumbersCeiled + 100 ** (-decimalNumbersCeiled))
+            print "new alpha: %f" % self.alpha
         return
 
     def training_policy(self, state):
