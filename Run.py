@@ -60,6 +60,8 @@ def train_game(nb_episodes, agent):
 
     score = 0
     maxScore = 0
+    numberOfFrames = 0
+
     while nb_episodes > 0:
         # pick an action
         s1 = env.game.getGameState()
@@ -74,6 +76,7 @@ def train_game(nb_episodes, agent):
         agent.observe(s1, action, reward, s2, isGameOver)
 
         score += reward
+        numberOfFrames += 1
 
         # reset the environment if the game is over
         if isGameOver:
@@ -81,6 +84,7 @@ def train_game(nb_episodes, agent):
 
             if nb_episodes % printEveryIterations == 0:
                 print("score for this episode: %d" % score)
+                print("number of frame %d" % numberOfFrames)
                 print("number of episodes left %d" % nb_episodes)
             env.reset_game()
             nb_episodes -= 1

@@ -5,11 +5,12 @@ from collections import defaultdict
 import random
 
 class QLearingAgentTest:
-    alpha = 0.1
+    alpha = 0.3
     gamma = 1
     epsilon = 0.1
 
     _q = defaultdict(lambda: [0, 0])
+    _episodeCount = 0
 
     def __init__(self):
         random.seed(42)
@@ -27,28 +28,42 @@ class QLearingAgentTest:
 
     def discretizeState(self, s):
         delta_y = s['player_y'] - s['next_pipe_top_y']
-        if delta_y < -110:
+        if delta_y < -250:
             delta_y = 0
-        elif delta_y < -50:
+        elif delta_y < -150:
             delta_y = 1
-        elif delta_y < -10:
+        elif delta_y < -110:
             delta_y = 2
-        elif delta_y < 20:
+        elif delta_y < -80:
             delta_y = 3
-        elif delta_y < 40:
+        elif delta_y < -50:
             delta_y = 4
-        elif delta_y < 60:
+        elif delta_y < -20:
             delta_y = 5
-        elif delta_y < 80:
+        elif delta_y < 0:
             delta_y = 6
-        elif delta_y < 100:
+        elif delta_y < 20:
             delta_y = 7
-        elif delta_y < 150:
+        elif delta_y < 40:
             delta_y = 8
-        elif delta_y < 250:
+        elif delta_y < 60:
             delta_y = 9
-        else:
+        elif delta_y < 80:
             delta_y = 10
+        elif delta_y < 100:
+            delta_y = 11
+        elif delta_y < 120:
+            delta_y = 12
+        elif delta_y < 150:
+            delta_y = 13
+        elif delta_y < 180:
+            delta_y = 14
+        elif delta_y < 250:
+            delta_y = 15
+        elif delta_y < 350:
+            delta_y = 16
+        else:
+            delta_y = 17
         return ( delta_y, int(s['player_vel']), int(s['next_pipe_dist_to_player'] * 15 / 512))
 
     def observe(self, s1, a, r, s2, end):
@@ -78,7 +93,16 @@ class QLearingAgentTest:
         else:
             self._q[maskS1][1] = newQ
 
-        return
+        if not end:
+            return
+
+        self._episodeCount += 1
+        if self._episodeCount == 600:
+            self.alpha = 0.1
+        if self._episodeCount == 2000:
+            self.alpha = 0.015
+        if self._episodeCount == 2500:
+            self.alpha = 0.005
 
     def training_policy(self, state):
         """ Returns the index of the action that should be done in state while training the agent.
