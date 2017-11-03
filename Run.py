@@ -19,10 +19,10 @@ from test import QLearingAgentTest
 #agent = QLearingAgentOptimizedReward()
 #agent = QLearingAgentOptimizedGamma()
 #agent = QLearingAgentDynamicAlpha()
-#agent = LFA()
+agent = LFA()
 #agent = MCAgentDynamicAlpha()
 #agent = AgentBest()
-agent = QLearingAgentTest()
+#agent = QLearingAgentTest()
 
 printEveryIterations = 100
 plotEveryNAverages = 20

@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from collections import defaultdict
 import random
 
-class QLearingAgentOptimizedReward:
+class QLearingAgentOptimizedState:
     alpha = 0.1
     gamma = 1
     epsilon = 0.1
@@ -23,10 +23,47 @@ class QLearingAgentOptimizedReward:
             1 for passing through each pipe and 0 for all other state
             transitions.
         """
-        return {"positive": 100.0, "tick": 1.0, "loss": -1000.0}
+        return {"positive": 1.0, "tick": 0.0, "loss": -5.0}
 
     def discretizeState(self, s):
-        return ( int(s['next_pipe_top_y'] * 15 / 512), int(s['player_y'] * 15 / 512), int(s['player_vel']), int(s['next_pipe_dist_to_player'] * 15 / 288))
+        delta_y = int(s['next_pipe_top_y']) - int(s['player_y'])
+        if delta_y < -250:
+            delta_y = 0
+        elif delta_y < -150:
+            delta_y = 1
+        elif delta_y < -110:
+            delta_y = 2
+        elif delta_y < -80:
+            delta_y = 3
+        elif delta_y < -50:
+            delta_y = 4
+        elif delta_y < -20:
+            delta_y = 5
+        elif delta_y < 0:
+            delta_y = 6
+        elif delta_y < 20:
+            delta_y = 7
+        elif delta_y < 40:
+            delta_y = 8
+        elif delta_y < 60:
+            delta_y = 9
+        elif delta_y < 80:
+            delta_y = 10
+        elif delta_y < 100:
+            delta_y = 11
+        elif delta_y < 120:
+            delta_y = 12
+        elif delta_y < 150:
+            delta_y = 13
+        elif delta_y < 180:
+            delta_y = 14
+        elif delta_y < 250:
+            delta_y = 15
+        elif delta_y < 350:
+            delta_y = 16
+        else:
+            delta_y = 17
+        return ( delta_y, int(s['player_vel']), int(s['next_pipe_dist_to_player'] * 15 / 288))
 
     def observe(self, s1, a, r, s2, end):
         """ this function is called during training on each step of the game where
@@ -101,11 +138,11 @@ class QLearingAgentOptimizedReward:
         data = [s + tuple(self._q[s]) for s in self._q.keys()]
         # turn this into a dataframe, giving the columns the right names
         df = pd.DataFrame(data=data,
-                          columns=('next_pipe_top_y', 'player_y', 'player_vel',
+                          columns=('delta_y', 'player_vel',
                                    'next_pipe_dist_to_player', 'q_flap', 'q_noop')
                           )
         # add a few more columns that might come in handy
-        df['delta_y'] = df['player_y'] - df['next_pipe_top_y']
+        #df['delta_y'] = df['player_y'] - df['next_pipe_top_y']
         df['v'] = df[['q_noop', 'q_flap']].max(axis=1)
         df['pi'] = (df[['q_noop', 'q_flap']].idxmax(axis=1) == 'q_flap') * 1
         # group entries that have the same 'delta_y' and 'next_pipe_dist_to_player',
