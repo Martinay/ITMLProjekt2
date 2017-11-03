@@ -64,7 +64,7 @@ class QLearingAgentTest:
             delta_y = 16
         else:
             delta_y = 17
-        return ( delta_y, int(s['player_vel']), int(s['next_pipe_dist_to_player'] * 15 / 512))
+        return ( delta_y, int(s['player_vel'] * 15/19), int(s['next_pipe_dist_to_player'] * 10 / 288))
 
     def observe(self, s1, a, r, s2, end):
         """ this function is called during training on each step of the game where
@@ -148,11 +148,10 @@ class QLearingAgentTest:
         data = [s + tuple(self._q[s]) for s in self._q.keys()]
         # turn this into a dataframe, giving the columns the right names
         df = pd.DataFrame(data=data,
-                          columns=('next_pipe_top_y', 'player_y', 'player_vel',
+                          columns=('delta_y', 'player_vel',
                                    'next_pipe_dist_to_player', 'q_flap', 'q_noop')
                           )
         # add a few more columns that might come in handy
-        df['delta_y'] = df['player_y'] - df['next_pipe_top_y']
         df['v'] = df[['q_noop', 'q_flap']].max(axis=1)
         df['pi'] = (df[['q_noop', 'q_flap']].idxmax(axis=1) == 'q_flap') * 1
         # group entries that have the same 'delta_y' and 'next_pipe_dist_to_player',

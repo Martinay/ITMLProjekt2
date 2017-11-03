@@ -29,7 +29,7 @@ class MCAgentDynamicAlpha:
         return {"positive": 1.0, "tick": 0.0, "loss": -5.0}
 
     def discretizeState(self, s):
-        return ( int(s['next_pipe_top_y'] * 15 / 512), int(s['player_y'] * 15 / 512), int(s['player_vel']), int(s['next_pipe_dist_to_player'] * 15 / 512))
+        return ( int(s['next_pipe_top_y'] * 15 / 512), int(s['player_y'] * 15 / 512), int(s['player_vel'] * 15/19), int(s['next_pipe_dist_to_player'] * 15 / 288))
 
     def observe(self, s1, a, r, s2, end):
         """ this function is called during training on each step of the game where
